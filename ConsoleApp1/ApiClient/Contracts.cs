@@ -255,6 +255,13 @@ namespace BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts
         /// <exception cref="SwaggerException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<GetAllTableAutomationsStatusResponseDto> GetAllAutomationsStatusesAsync(System.Guid spaceId, System.Guid repositoryId, string apiVersion, System.Threading.CancellationToken cancellationToken);
 
+        /// <exception cref="SwaggerException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.ObjectModel.ObservableCollection<ParameterStreamingResponseDto>> GetTableParametersAsync(System.Guid spaceId, System.Guid repositoryId, System.Guid? repositoryViewId, string apiVersion);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <exception cref="SwaggerException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.ObjectModel.ObservableCollection<ParameterStreamingResponseDto>> GetTableParametersAsync(System.Guid spaceId, System.Guid repositoryId, System.Guid? repositoryViewId, string apiVersion, System.Threading.CancellationToken cancellationToken);
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -1694,9 +1701,6 @@ namespace BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts
         [Newtonsoft.Json.JsonProperty("newName", Required = Newtonsoft.Json.Required.Always)]
         public string NewName { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("userId", Required = Newtonsoft.Json.Required.Always)]
-        public System.Guid UserId { get; set; }
-
         public string ToJson()
         {
 
@@ -1805,6 +1809,42 @@ namespace BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts
         Executed = 6,
 
         OnError = 7,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "13.19.0.0 (NJsonSchema v10.9.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ParameterStreamingResponseDto
+    {
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public System.Guid Id { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("isVisible", Required = Newtonsoft.Json.Required.Always)]
+        public bool IsVisible { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Always)]
+        public string Type { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Always)]
+        public int Order { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("onflyPropertyGuid", Required = Newtonsoft.Json.Required.Always)]
+        public System.Guid OnflyPropertyGuid { get; set; }
+
+        public string ToJson()
+        {
+
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this, new Newtonsoft.Json.JsonSerializerSettings());
+
+        }
+        public static ParameterStreamingResponseDto FromJson(string data)
+        {
+
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<ParameterStreamingResponseDto>(data, new Newtonsoft.Json.JsonSerializerSettings());
+
+        }
 
     }
 

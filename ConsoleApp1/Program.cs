@@ -97,39 +97,19 @@ catch (Exception ex)
 
 /** RETRIEVE PARAMETERS **/
 
+IRepositoryClient repositoryClient = services.GetRequiredService<IRepositoryClient>();
+ObservableCollection<ParameterStreamingResponseDto> parametersResponse;
 try
 {
-    AddColumnsBatchCommitResponseDto response = await batchClient.AddColumnsBatchAsync("1.0", spaceId, repositoryId, new AddColumnsBatchCommitRequestDto()
-    {
-        TableId = Guid.Parse(repositoryId),
-        SubRequests = new ObservableCollection<AddColumnsBatchCommitSubRequestDto>()
-        {
-            new AddColumnsBatchCommitSubRequestDto()
-            {
-                Name = "My property Toto",
-                ParameterId = Guid.NewGuid().ToString(),
-                ParameterDataType = "4",
-                ParameterKind = "2"
-            },
-            new AddColumnsBatchCommitSubRequestDto()
-            {
-                Name = "My property Titi",
-                ParameterId = Guid.NewGuid().ToString(),
-                ParameterDataType = "4",
-                ParameterKind = "2"
-            }
-        }
-    });
-
-    Console.WriteLine("Columns Created !");
+    parametersResponse = await repositoryClient.GetTableParametersAsync(Guid.Parse(spaceId), Guid.Parse(repositoryId), null, "1.0");
+    Console.WriteLine("Columns retrieve !");
 }
 catch (Exception ex)
 {
-    Console.WriteLine("Error Creating columns");
+    Console.WriteLine("Error Retrieving columns");
     Console.WriteLine(ex.ToString());
     return;
 }
-
 
 
 /** ADD LINES **/
@@ -149,12 +129,12 @@ try
                 {
                     new NewCellValueDto()
                     {
-                        ParameterId = Guid.Parse(Parameters[0].ParameterId),
+                        ParameterId = parametersResponse.FirstOrDefault(p => p.Name == "My property Toto").Id,
                         Value = "toto"
                     },
                      new NewCellValueDto()
                     {
-                        ParameterId = Guid.Parse(Parameters[1].ParameterId),
+                        ParameterId = parametersResponse.FirstOrDefault(p => p.Name == "My property Titi").Id,
                         Value = "titi"
                     },
                 },
@@ -192,6 +172,7 @@ IHostBuilder CreateHostBuilder(string[] strings)
             services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
             services.AddTransient<AddHeadersHandler>();
             services.AddHttpClient<IBatchClient, BatchClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
+            services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
         });
 }
 
