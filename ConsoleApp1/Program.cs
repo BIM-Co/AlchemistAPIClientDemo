@@ -65,7 +65,6 @@ try
 {
     AddColumnsBatchCommitResponseDto response = await batchClient.AddColumnsBatchAsync("1.0", spaceId, repositoryId, new AddColumnsBatchCommitRequestDto()
     {
-        TableId = Guid.Parse(repositoryId),
         SubRequests = new ObservableCollection<AddColumnsBatchCommitSubRequestDto>()
         {
             new AddColumnsBatchCommitSubRequestDto()
@@ -118,7 +117,6 @@ try
 {
     AddLinesBatchCommitResponseDto response = await batchClient.AddLinesBatchAsync("1.0", spaceId, repositoryId, new BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts.AddLinesBatchCommitRequestDto()
     {
-        TableId = Guid.Parse(repositoryId),
         Entities = new ObservableCollection<NewEntityDto>()
         {
             new BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts.NewEntityDto()
