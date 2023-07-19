@@ -4,3 +4,11 @@ ConsoleApp1/obj/
 ConsoleApp1/bin/
 
 .vs/
+
+SharedSDK/obj/
+
+SharedSDK/bin/
+
+AlchemistToOnfly/obj/
+
+AlchemistToOnfly/bin/

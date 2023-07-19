@@ -37,10 +37,14 @@ do
     }
 } while (key != ConsoleKey.Enter);
 
-string spaceId = "05b674d9-186f-474d-ae4d-076dd716ddff";
-string repositoryId = "653f4b60-8a4a-4df1-b371-e4b93ccd38c8";
+Guid spaceId = Guid.Parse("8c3900d9-c862-42d9-a4c1-2385a5787cdd");
+Guid repositoryId = Guid.Parse("93d70830-df24-41ec-93b2-d737c34850a9");
+string dataCulture = "en";
 
 /** AUTHENTICATION **/
+
+services.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.RC);
+services.GetRequiredService<IEnvironmentManager>().SetSSOEnvironment(BCEnvironment.PROD);
 
 IAuthenticationManager authenticationManager = services.GetRequiredService<IAuthenticationManager>();
 await authenticationManager.Initialize();
@@ -58,13 +62,15 @@ else
     return;
 }
 
+IRepositoryClient repositoryClient = services.GetRequiredService<IRepositoryClient>();
+IUploadBundlesClient uploadBundlesClient = services.GetRequiredService<IUploadBundlesClient>();
+
 /** RETRIEVE PARAMETERS **/
 
-IRepositoryClient repositoryClient = services.GetRequiredService<IRepositoryClient>();
 ObservableCollection<ParameterStreamingResponseDto> parametersResponse;
 try
 {
-    parametersResponse = await repositoryClient.GetTableParametersAsync(Guid.Parse(spaceId), Guid.Parse(repositoryId), null, "1.0");
+    parametersResponse = await repositoryClient.GetTableParametersAsync(spaceId, repositoryId, null, "1.0");
     Console.WriteLine("Columns retrieve !");
 }
 catch (Exception ex)
@@ -74,31 +80,74 @@ catch (Exception ex)
     return;
 }
 
+/** RETREIVE ENTITIES **/
 
+int from = 0;
+int size = 100;
+bool hasNextResult = true;
 
-IUploadBundlesClient uploadBundlesClient = services.GetRequiredService<IUploadBundlesClient>();
-UploadBundlesRequestFromBody uploadRequest = new UploadBundlesRequestFromBody()
-{
-    Bundles = new ObservableCollection<UploadBundleRequest2>()
+while (hasNextResult) {
+
+    ListPaginatedEntitiesResponseDto results = await repositoryClient.ListEntitiesPaginatedAsync(spaceId, repositoryId, from, size, "1.0");
+
+    UploadBundlesRequestFromBody uploadRequest = new UploadBundlesRequestFromBody()
     {
-        new UploadBundleRequest2(){
-            Guid = Guid.NewGuid().ToString(),
-            Bundle = new SmBundleV5()
+        Bundles = new ObservableCollection<UploadBundleRequest2>(
+            results.Entities.Select(item => new UploadBundleRequest2()
             {
-                BundleType = BundleType.Upload,
-                BimObject = new SmBimObjectV5()
+                Guid = Guid.NewGuid().ToString(),
+                Bundle = new SmBundleV5()
                 {
-                    Variants = new ObservableCollection<SmVariant>()
+                    BundleType = BundleType.Upload,
+                    BimObject = new SmBimObjectV5()
                     {
-
+                        Variants = new ObservableCollection<SmVariant>()
+                        {
+                            new SmVariant()
+                            {
+                                VariantValues = new ObservableCollection<SmVariantValue>(
+                                    item.Values
+                                    .Join(
+                                        parametersResponse,
+                                        value => value.ParameterId,
+                                        parameter => parameter.Id,
+                                        (value, parameter) => new
+                                        {
+                                            value,
+                                            parameter
+                                        }
+                                    )
+                                    .Where(r => r.parameter.OnflyPropertyGuid != Guid.Empty)
+                                    .Select(r => new SmVariantValue()
+                                    {
+                                        Property = new SmProperty()
+                                        {
+                                            Guid = r.parameter.OnflyPropertyGuid
+                                        },
+                                        Values = new ObservableCollection<SmValue>()
+                                        {
+                                            new SmValue()
+                                            {
+                                                Value = r.value.Value,
+                                                LanguageCode = dataCulture
+                                            }
+                                        }
+                                    })
+                                ),
+                            }
+                        }
                     }
                 }
             }
-        }
-    },
-    GlobalGuid = Guid.NewGuid().ToString(),
-};
-await uploadBundlesClient.UploadBundlesAsync(uploadRequest);
+        )),
+        GlobalGuid = Guid.NewGuid().ToString(),
+    };
+
+    await uploadBundlesClient.UploadBundlesAsync(uploadRequest);
+
+    hasNextResult = results?.HasNext ?? false;
+    from += size;
+}
 
 // DEPENDENCY INJECTION
 
@@ -117,10 +166,14 @@ IHostBuilder CreateHostBuilder(string[] strings)
                 client.BaseAddress = new Uri(sp.GetRequiredService<IEnvironmentManager>().GetAlchemistApiUrl());
             };
 
+            var createHttpClientOnfly = (HttpClient client) =>
+            {
+                client.BaseAddress = new Uri(sp.GetRequiredService<IEnvironmentManager>().GetPlatformApiUrl());
+            };
+
             services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
             services.AddTransient<AddHeadersHandler>();
-            services.AddHttpClient<IUploadBundlesClient, UploadBundlesClient>();
-            services.AddHttpClient<IBatchClient, BatchClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
+            services.AddHttpClient<IUploadBundlesClient, UploadBundlesClient>(createHttpClientOnfly).AddHttpMessageHandler<AddHeadersHandler>();
             services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
         });
 }

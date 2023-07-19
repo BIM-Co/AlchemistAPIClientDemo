@@ -3,6 +3,7 @@
     public class EnvironmentManager : IEnvironmentManager
     {
         private BCEnvironment _currentEnvironment = BCEnvironment.PROD;
+        private BCEnvironment _currentSSOEnvironment = BCEnvironment.PROD;
 
         public EnvironmentManager()
         {
@@ -13,12 +14,13 @@
         public void SetEnvironment(BCEnvironment environment)
         {
             _currentEnvironment = environment;
+            _currentSSOEnvironment = environment;
         }
 
         public string GetSSOUrl()
         {
             string url;
-            switch (_currentEnvironment)
+            switch (_currentSSOEnvironment)
             {
                 case BCEnvironment.PROD:
                 default:
@@ -84,8 +86,12 @@
             }
             return url;
         }
-    }
 
+        public void SetSSOEnvironment(BCEnvironment environment)
+        {
+            _currentSSOEnvironment = environment;
+        }
+    }
 
     public enum BCEnvironment
     {

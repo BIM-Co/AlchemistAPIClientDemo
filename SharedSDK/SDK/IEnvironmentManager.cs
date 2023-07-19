@@ -11,6 +11,8 @@
 
         public void SetEnvironment(BCEnvironment environment);
 
+        public void SetSSOEnvironment(BCEnvironment environment);
+
         public BCEnvironment CurrentEnvironment { get; }
 
     }
