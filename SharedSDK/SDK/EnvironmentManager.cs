@@ -4,6 +4,7 @@
     {
         private BCEnvironment _currentEnvironment = BCEnvironment.PROD;
         private BCEnvironment _currentSSOEnvironment = BCEnvironment.PROD;
+        private BCEnvironment _currentAlchemistEnvironment = BCEnvironment.PROD;
 
         public EnvironmentManager()
         {
@@ -15,6 +16,7 @@
         {
             _currentEnvironment = environment;
             _currentSSOEnvironment = environment;
+            _currentAlchemistEnvironment = environment;
         }
 
         public string GetSSOUrl()
@@ -44,7 +46,7 @@
         public string GetAlchemistApiUrl()
         {
             string url;
-            switch (_currentEnvironment)
+            switch (_currentAlchemistEnvironment)
             {
                 case BCEnvironment.PROD:
                 default:
@@ -90,6 +92,11 @@
         public void SetSSOEnvironment(BCEnvironment environment)
         {
             _currentSSOEnvironment = environment;
+        }
+
+        public void SetAlchemistEnvironment(BCEnvironment environment)
+        {
+            _currentAlchemistEnvironment = environment;
         }
     }
 

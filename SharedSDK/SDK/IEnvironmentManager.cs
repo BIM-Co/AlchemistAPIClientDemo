@@ -13,6 +13,8 @@
 
         public void SetSSOEnvironment(BCEnvironment environment);
 
+        public void SetAlchemistEnvironment(BCEnvironment environment);
+
         public BCEnvironment CurrentEnvironment { get; }
 
     }

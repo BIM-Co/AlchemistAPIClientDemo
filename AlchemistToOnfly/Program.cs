@@ -37,14 +37,15 @@ do
     }
 } while (key != ConsoleKey.Enter);
 
-Guid spaceId = Guid.Parse("8c3900d9-c862-42d9-a4c1-2385a5787cdd");
-Guid repositoryId = Guid.Parse("93d70830-df24-41ec-93b2-d737c34850a9");
+Guid spaceId = Guid.Parse("1ef56a31-8fa5-49fc-abae-b19a17077469");
+Guid repositoryId = Guid.Parse("e7355c4e-b89b-4698-9fc7-b81f0b9f6fc0");
 string dataCulture = "en";
 
 /** AUTHENTICATION **/
 
-services.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.RC);
+services.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.PROD);
 services.GetRequiredService<IEnvironmentManager>().SetSSOEnvironment(BCEnvironment.PROD);
+services.GetRequiredService<IEnvironmentManager>().SetAlchemistEnvironment(BCEnvironment.PROD);
 
 IAuthenticationManager authenticationManager = services.GetRequiredService<IAuthenticationManager>();
 await authenticationManager.Initialize();
@@ -101,10 +102,12 @@ while (hasNextResult) {
                     BundleType = BundleType.Upload,
                     BimObject = new SmBimObjectV5()
                     {
+                        Definitions = new ObservableCollection<SmDefinition> { new SmDefinition() { Name = "My Object Name", LanguageCode = dataCulture, IsDefault = true }},
                         Variants = new ObservableCollection<SmVariant>()
                         {
                             new SmVariant()
                             {
+                                Name= "REF1",
                                 VariantValues = new ObservableCollection<SmVariantValue>(
                                     item.Values
                                     .Join(
@@ -161,7 +164,7 @@ IHostBuilder CreateHostBuilder(string[] strings)
 
             var sp = services.BuildServiceProvider();
 
-            var createHttpClient = (HttpClient client) =>
+            var createHttpClientAlchemist = (HttpClient client) =>
             {
                 client.BaseAddress = new Uri(sp.GetRequiredService<IEnvironmentManager>().GetAlchemistApiUrl());
             };
@@ -174,6 +177,6 @@ IHostBuilder CreateHostBuilder(string[] strings)
             services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
             services.AddTransient<AddHeadersHandler>();
             services.AddHttpClient<IUploadBundlesClient, UploadBundlesClient>(createHttpClientOnfly).AddHttpMessageHandler<AddHeadersHandler>();
-            services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
+            services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClientAlchemist).AddHttpMessageHandler<AddHeadersHandler>();
         });
 }
