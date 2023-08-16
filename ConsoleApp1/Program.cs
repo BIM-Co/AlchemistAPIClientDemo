@@ -1,20 +1,30 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using BimAndCo.Alchemist.Web.Api.Clients.CSharp;
 using BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts;
+
 using ConsoleApp1.SDK;
-using IdentityModel.Client;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using System.Collections.ObjectModel;
 
-using IHost host = CreateHostBuilder(args).Build();
+void ConfigureEnvironment(IServiceProvider serviceProvider)
+{
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.DEV);
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetSSOEnvironment(BCEnvironment.PROD);
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetAlchemistEnvironment(BCEnvironment.DEV);
+}
+
+using IHost host = CreateHostBuilder(args, ConfigureEnvironment).Build();
 
 using IServiceScope scope = host.Services.CreateScope();
 IServiceProvider services = scope.ServiceProvider;
 
 /** INITIALIZATION **/
+ConfigureEnvironment(services);
 
-Console.WriteLine("Please enter your email ?");
+/*Console.WriteLine("Please enter your email ?");
 string userName = Console.ReadLine();
 Console.WriteLine("Please enter your password ?");
 string password = "";
@@ -34,10 +44,20 @@ do
         Console.Write("*");
         password += keyInfo.KeyChar;
     }
-} while (key != ConsoleKey.Enter);
+} while (key != ConsoleKey.Enter);*/
 
-string spaceId = "05b674d9-186f-474d-ae4d-076dd716ddff";
-string repositoryId = "653f4b60-8a4a-4df1-b371-e4b93ccd38c8";
+string userName = "bjean@bimandco.com";
+string password = "4dohCvcH8";
+
+/*string userName = "bjean@bimandco.com";
+string password = "";*/
+
+/*Guid spaceId = Guid.Parse("97d53114-615a-4ddb-8ae5-8f82080c6645");
+Guid repositoryId = Guid.Parse("07d96202-c3ae-4d86-bce3-3fe9c942a7fd");*/
+
+Guid spaceId = Guid.Parse("1ef56a31-8fa5-49fc-abae-b19a17077469");
+Guid repositoryId = Guid.Parse("e7355c4e-b89b-4698-9fc7-b81f0b9f6fc0");
+
 
 /** AUTHENTICATION **/
 
@@ -152,7 +172,7 @@ catch(Exception ex)
 
 // DEPENDENCY INJECTION
 
-IHostBuilder CreateHostBuilder(string[] strings)
+IHostBuilder CreateHostBuilder(string[] strings, Action<IServiceProvider> configureEnvironment)
 {
 
     return Host.CreateDefaultBuilder()
@@ -161,6 +181,7 @@ IHostBuilder CreateHostBuilder(string[] strings)
             services.AddSingleton<IEnvironmentManager, EnvironmentManager>();
 
             var sp = services.BuildServiceProvider();
+            configureEnvironment.Invoke(sp);
 
             var createHttpClient = (HttpClient client) =>
             {
@@ -168,9 +189,16 @@ IHostBuilder CreateHostBuilder(string[] strings)
             };
 
             services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
+
             services.AddTransient<AddHeadersHandler>();
-            services.AddHttpClient<IBatchClient, BatchClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
-            services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClient).AddHttpMessageHandler<AddHeadersHandler>();
+
+            services
+                .AddHttpClient<IBatchClient, BatchClient>(createHttpClient)
+                .AddHttpMessageHandler<AddHeadersHandler>();
+
+            services
+                .AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClient)
+                .AddHttpMessageHandler<AddHeadersHandler>();
         });
 }
 

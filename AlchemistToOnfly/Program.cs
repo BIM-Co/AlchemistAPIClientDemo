@@ -3,17 +3,28 @@ using BimAndCo.Alchemist.Web.Api.Clients.CSharp;
 using BimAndCo.Alchemist.Web.Api.Clients.CSharp.Contracts;
 using BimAndCo.Api.Client.CSharp;
 using BimAndCo.Api.Client.CSharp.Contracts;
+
 using ConsoleApp1.SDK;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using System.Collections.ObjectModel;
 
-using IHost host = CreateHostBuilder(args).Build();
+void ConfigureEnvironment(IServiceProvider serviceProvider)
+{
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.PROD);
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetSSOEnvironment(BCEnvironment.PROD);
+    serviceProvider.GetRequiredService<IEnvironmentManager>().SetAlchemistEnvironment(BCEnvironment.PROD);
+}
+
+using IHost host = CreateHostBuilder(args, ConfigureEnvironment).Build();
 
 using IServiceScope scope = host.Services.CreateScope();
 IServiceProvider services = scope.ServiceProvider;
 
 /** INITIALIZATION **/
+ConfigureEnvironment(services);
 
 Console.WriteLine("Please enter your email ?");
 string userName = Console.ReadLine();
@@ -37,15 +48,18 @@ do
     }
 } while (key != ConsoleKey.Enter);
 
+/*string userName = "bjean@bimandco.com";
+string password = "";*/
+
+/*Guid spaceId = Guid.Parse("97d53114-615a-4ddb-8ae5-8f82080c6645");
+Guid repositoryId = Guid.Parse("07d96202-c3ae-4d86-bce3-3fe9c942a7fd");*/
+
 Guid spaceId = Guid.Parse("1ef56a31-8fa5-49fc-abae-b19a17077469");
 Guid repositoryId = Guid.Parse("e7355c4e-b89b-4698-9fc7-b81f0b9f6fc0");
+
 string dataCulture = "en";
 
 /** AUTHENTICATION **/
-
-services.GetRequiredService<IEnvironmentManager>().SetEnvironment(BCEnvironment.PROD);
-services.GetRequiredService<IEnvironmentManager>().SetSSOEnvironment(BCEnvironment.PROD);
-services.GetRequiredService<IEnvironmentManager>().SetAlchemistEnvironment(BCEnvironment.PROD);
 
 IAuthenticationManager authenticationManager = services.GetRequiredService<IAuthenticationManager>();
 await authenticationManager.Initialize();
@@ -154,7 +168,7 @@ while (hasNextResult) {
 
 // DEPENDENCY INJECTION
 
-IHostBuilder CreateHostBuilder(string[] strings)
+IHostBuilder CreateHostBuilder(string[] strings, Action<IServiceProvider> configureServices)
 {
 
     return Host.CreateDefaultBuilder()
@@ -163,6 +177,8 @@ IHostBuilder CreateHostBuilder(string[] strings)
             services.AddSingleton<IEnvironmentManager, EnvironmentManager>();
 
             var sp = services.BuildServiceProvider();
+
+            configureServices.Invoke(sp);
 
             var createHttpClientAlchemist = (HttpClient client) =>
             {
@@ -175,8 +191,16 @@ IHostBuilder CreateHostBuilder(string[] strings)
             };
 
             services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
+            
             services.AddTransient<AddHeadersHandler>();
-            services.AddHttpClient<IUploadBundlesClient, UploadBundlesClient>(createHttpClientOnfly).AddHttpMessageHandler<AddHeadersHandler>();
-            services.AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClientAlchemist).AddHttpMessageHandler<AddHeadersHandler>();
+
+            services
+                .AddHttpClient<IUploadBundlesClient, UploadBundlesClient>(createHttpClientOnfly)
+                .AddHttpMessageHandler<AddHeadersHandler>();
+
+            services
+                .AddHttpClient<IRepositoryClient, RepositoryClient>(createHttpClientAlchemist)
+                .AddHttpMessageHandler<AddHeadersHandler>();
+
         });
 }
